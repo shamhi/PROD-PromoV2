@@ -1,0 +1,5 @@
+variables:
+  BASE_URL: "http://127.0.0.1:8041/api"
+  ANTIFRAUD_URL: "http://217.18.61.128:9090/internal"
+  # BASE_URL: "{tavern.env_vars.BASE_URL}"
+  # ANTIFRAUD_URL: "{tavern.env_vars.ANTIFRAUD_URL}"

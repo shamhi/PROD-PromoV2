@@ -1,0 +1,3 @@
+variables:
+   BASE_URL: "{tavern.env_vars.BASE_URL}"
+   ANTIFRAUD_URL: "{tavern.env_vars.ANTIFRAUD_URL}"

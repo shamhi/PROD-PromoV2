@@ -1,0 +1,6 @@
+__pycache__/
+.idea/
+.venv/
+venv/
+tests/t_venv
+.env
