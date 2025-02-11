@@ -1,28 +1,29 @@
+from collections.abc import Iterable
 from datetime import date
-from typing import Tuple, Iterable
+from typing import Tuple
 
-from sqlalchemy import or_, and_, func
+from sqlalchemy import and_, func, or_
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import (
+    EntityAccessDeniedError,
+    EntityNotFoundError,
+    EntityUnauthorizedError,
+)
+from app.core.security import Security
 from app.database.postgres.models import (
-    UserModel,
-    UserPromoActivationModel,
+    CommentModel,
     PromoModel,
     PromoTargetModel,
     PromoUniqueValueModel,
-    CommentModel,
+    UserModel,
+    UserPromoActivationModel,
 )
-from app.core.security import get_password_hash
-from app.core.exceptions import (
-    EntityUnauthorizedError,
-    EntityAccessDeniedError,
-    EntityNotFoundError,
-)
+from app.schemas.common import CommentId, CommentText, Email, PromoId, UserId
 from app.schemas.enums import PromoModeEnum
-from app.schemas.common import Email, UserId, PromoId, CommentId, CommentText
-from app.schemas.user import UserRegister, UserPatch
+from app.schemas.user import UserPatch, UserRegister
 from app.utils.time import get_comment_date
 
 
@@ -30,8 +31,8 @@ class UserRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def create_new_user(self, user: UserRegister) -> UserModel:
-        hashed_password = get_password_hash(user.password)
+    async def create_new_user(self, user: UserRegister, security: Security) -> UserModel:
+        hashed_password = security.get_password_hash(user.password)
         new_user = UserModel(
             name=user.name,
             surname=user.surname,
@@ -60,7 +61,7 @@ class UserRepository:
 
         return result.scalars().one_or_none()
 
-    async def patch_user_by_id(self, user_id: UserId, user_patch: UserPatch) -> UserModel:
+    async def patch_user_by_id(self, user_id: UserId, user_patch: UserPatch, security: Security) -> UserModel:
         query = select(UserModel).where(UserModel.id == user_id)
 
         result = await self.db_session.execute(query)
@@ -76,7 +77,7 @@ class UserRepository:
         if user_patch.avatar_url:
             user.avatar_url = str(user_patch.avatar_url)
         if user_patch.password:
-            user.password = get_password_hash(user_patch.password)
+            user.password = security.get_password_hash(user_patch.password)
 
         await self.db_session.commit()
         await self.db_session.refresh(user)
@@ -85,7 +86,7 @@ class UserRepository:
 
     async def get_promos_for_user(
         self, user_id: UserId, category: str, active: bool, limit: int, offset: int
-    ) -> Tuple[int, Iterable[PromoModel]]:
+    ) -> tuple[int, Iterable[PromoModel]]:
         query = select(PromoModel).options(
             selectinload(PromoModel.liked_by_users),
             selectinload(PromoModel.company),
@@ -96,10 +97,7 @@ class UserRepository:
 
         if active is not None:
             active_cond = self.get_user_promo_active_condition()
-            if active:
-                query = query.where(active_cond)
-            else:
-                query = query.where(~active_cond)
+            query = query.where(active_cond) if active else query.where(~active_cond)
 
         if category:
             category_lower = category.lower()
@@ -162,9 +160,7 @@ class UserRepository:
         if not user:
             raise EntityUnauthorizedError
 
-        promo_query = (
-            select(PromoModel).where(PromoModel.id == promo_id).options(selectinload(PromoModel.liked_by_users))
-        )
+        promo_query = select(PromoModel).where(PromoModel.id == promo_id).options(selectinload(PromoModel.liked_by_users))
         promo_result = await self.db_session.execute(promo_query)
         promo = promo_result.scalars().one_or_none()
 
@@ -183,9 +179,7 @@ class UserRepository:
         if not user:
             raise EntityUnauthorizedError
 
-        promo_query = (
-            select(PromoModel).where(PromoModel.id == promo_id).options(selectinload(PromoModel.liked_by_users))
-        )
+        promo_query = select(PromoModel).where(PromoModel.id == promo_id).options(selectinload(PromoModel.liked_by_users))
         promo_result = await self.db_session.execute(promo_query)
         promo = promo_result.scalars().one_or_none()
 
@@ -222,7 +216,7 @@ class UserRepository:
 
         return new_comment
 
-    async def get_promo_comments(self, promo_id: PromoId, limit: int, offset: int) -> Tuple[int, Iterable[CommentModel]]:
+    async def get_promo_comments(self, promo_id: PromoId, limit: int, offset: int) -> tuple[int, Iterable[CommentModel]]:
         query = select(CommentModel).where(CommentModel.promo_id == promo_id).options(selectinload(CommentModel.author))
 
         total_count_query = query.with_only_columns(func.count()).order_by(None)
@@ -350,7 +344,7 @@ class UserRepository:
 
     async def get_user_promo_activations_history(
         self, user_id: UserId, limit: int, offset: int
-    ) -> Tuple[int, Iterable[PromoModel]]:
+    ) -> tuple[int, Iterable[PromoModel]]:
         query = (
             select(PromoModel)
             .join(

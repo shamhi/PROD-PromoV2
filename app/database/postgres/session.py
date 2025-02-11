@@ -1,6 +1,6 @@
-from typing import AsyncIterable
+from collections.abc import AsyncIterable
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from app.database.postgres.base import Base
 

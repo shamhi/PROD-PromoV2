@@ -2,32 +2,32 @@ from typing import Annotated, Optional
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
-from fastapi import APIRouter, Response, Query, Path, Depends, status
+from fastapi import APIRouter, Depends, Path, Query, Response, status
 from fastapi.responses import JSONResponse
 
 from app.api.v2.endpoints.auth import oauth2_scheme
 from app.core.exceptions import (
-    InvalidRequestDataError,
-    EntityUnauthorizedError,
-    EntityNotFoundError,
     EntityAccessDeniedError,
+    EntityNotFoundError,
+    EntityUnauthorizedError,
+    InvalidRequestDataError,
 )
 from app.interactors.auth import OAuth2PasswordBearerCompanyInteractor
-from app.interactors.caching import CacheAccessTokenInteractor
 from app.interactors.business import (
     CreateNewPromoInteractor,
-    GetPromosListInteractor,
     GetPromoByIdInteractor,
-    PatchPromoByIdInteractor,
+    GetPromosListInteractor,
     GetPromoStatByIdInteractor,
+    PatchPromoByIdInteractor,
 )
-from app.schemas.common import PromoId
-from app.schemas.error import ErrorResponse
-from app.schemas.enums import PromoSortByEnum
+from app.interactors.caching import CacheAccessTokenInteractor
 from app.schemas.business import PromoCreate, PromoPatch
+from app.schemas.common import PromoId
+from app.schemas.enums import PromoSortByEnum
+from app.schemas.error import ErrorResponse
 from app.utils.serializer import serialize_countries_list
 
-router = APIRouter(route_class=DishkaRoute)
+router = APIRouter(route_class=DishkaRoute, prefix="/business", tags=["B2B"])
 
 
 @router.post("/promo")
@@ -56,15 +56,13 @@ async def get_promos_list(
     business_interactor: FromDishka[GetPromosListInteractor],
     oauth2_interactor: FromDishka[OAuth2PasswordBearerCompanyInteractor],
     cache_interactor: FromDishka[CacheAccessTokenInteractor],
-    sort_by: Optional[PromoSortByEnum] = Query(
-        default=None, description="Сортировать по дате начала/конца действия промокода"
-    ),
-    country: Optional[str] = Query(
+    sort_by: PromoSortByEnum | None = Query(default=None, description="Сортировать по дате начала/конца действия промокода"),
+    country: str | None = Query(
         default=None,
         description="Список стран целевой аудитории в формате ISO 3166-1 alpha-2",
     ),
-    limit: Optional[int] = Query(default=10, ge=0, le=100, description="Количество записей на странице"),
-    offset: Optional[int] = Query(default=0, ge=0, description="Смещение для пагинации"),
+    limit: int | None = Query(default=10, ge=0, le=100, description="Количество записей на странице"),
+    offset: int | None = Query(default=0, ge=0, description="Смещение для пагинации"),
 ) -> Response:
     try:
         company_id = await oauth2_interactor(token, cache_interactor)

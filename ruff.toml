@@ -1,2 +1,0 @@
-line-length = 121
-extend-exclude = ["alembic", "tests"]

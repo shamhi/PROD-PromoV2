@@ -1,31 +1,109 @@
+from dataclasses import dataclass
+from os import getenv
 from typing import Optional
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True)
+@dataclass(frozen=True)
+class PostgresConfig:
+    POSTGRES_CONN: str | None
+    POSTGRES_JDBC_URL: str | None
+    POSTGRES_USERNAME: str | None
+    POSTGRES_PASSWORD: str | None
+    POSTGRES_HOST: str | None
+    POSTGRES_PORT: int | None
+    POSTGRES_DATABASE: str | None
 
-    SERVER_ADDRESS: str = "0.0.0.0:8080"
-    SERVER_PORT: Optional[int] = 8080
+    @staticmethod
+    def from_env() -> "PostgresConfig":
+        conn = getenv("POSTGRES_CONN")
+        jdbc = getenv("POSTGRES_JDBC_URL")
+        username = getenv("POSTGRES_USERNAME")
+        password = getenv("POSTGRES_PASSWORD")
+        host = getenv("POSTGRES_HOST")
+        port = getenv("POSTGRES_PORT")
+        database = getenv("POSTGRES_DATABASE")
 
-    POSTGRES_CONN: Optional[str] = None
-    POSTGRES_JDBC_URL: Optional[str] = None
+        return PostgresConfig(
+            POSTGRES_CONN=conn,
+            POSTGRES_JDBC_URL=jdbc,
+            POSTGRES_USERNAME=username,
+            POSTGRES_PASSWORD=password,
+            POSTGRES_HOST=host,
+            POSTGRES_PORT=port,
+            POSTGRES_DATABASE=database,
+        )
 
-    POSTGRES_USERNAME: Optional[str] = None
-    POSTGRES_PASSWORD: Optional[str] = None
-    POSTGRES_HOST: Optional[str] = None
-    POSTGRES_PORT: Optional[int] = None
-    POSTGRES_DATABASE: Optional[str] = None
 
-    REDIS_HOST: Optional[str] = "localhost"
-    REDIS_PORT: Optional[int] = 6379
+@dataclass(frozen=True)
+class ServerConfig:
+    SERVER_ADDRESS: str
+    SERVER_PORT: int | None
 
-    ANTIFRAUD_ADDRESS: Optional[str] = "localhost:9090"
+    @staticmethod
+    def from_env() -> "ServerConfig":
+        address = getenv("SERVER_ADDRESS", "0.0.0.0:8080")
+        port = getenv("SERVER_PORT", 8080)
 
+        return ServerConfig(SERVER_ADDRESS=address, SERVER_PORT=port)
+
+
+@dataclass(frozen=True)
+class RedisConfig:
+    REDIS_HOST: str
+    REDIS_PORT: int
+
+    @staticmethod
+    def from_env() -> "RedisConfig":
+        host = getenv("REDIS_HOST", "localhost")
+        port = getenv("REDIS_PORT", 6379)
+
+        return RedisConfig(REDIS_HOST=host, REDIS_PORT=port)
+
+
+@dataclass(frozen=True)
+class SecurityConfig:
     RANDOM_SECRET: str
-    ALGORITH: Optional[str] = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: Optional[int] = 60
+    ALGORITH: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+
+    @staticmethod
+    def from_env() -> "SecurityConfig":
+        secret = getenv("RANDOM_SECRET")
+        algorithm = getenv("ALGORITH", "HS256")
+        expire_minutes = getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60)
+
+        return SecurityConfig(RANDOM_SECRET=secret, ALGORITH=algorithm, ACCESS_TOKEN_EXPIRE_MINUTES=expire_minutes)
 
 
-Config = Settings()
+@dataclass(frozen=True)
+class AntifraudConfig:
+    ANTIFRAUD_ADDRESS: str
+
+    @staticmethod
+    def from_env() -> "AntifraudConfig":
+        address = getenv("ANTIFRAUD_ADDRESS", "localhost:9090")
+
+        return AntifraudConfig(ANTIFRAUD_ADDRESS=address)
+
+
+@dataclass(frozen=True)
+class Config:
+    postgres_config: PostgresConfig
+    server_config: ServerConfig
+    redis_config: RedisConfig
+    security_config: SecurityConfig
+    antifraud_config: AntifraudConfig
+
+
+def create_config() -> Config:
+    return Config(
+        postgres_config=PostgresConfig.from_env(),
+        server_config=ServerConfig.from_env(),
+        redis_config=RedisConfig.from_env(),
+        security_config=SecurityConfig.from_env(),
+        antifraud_config=AntifraudConfig.from_env(),
+    )

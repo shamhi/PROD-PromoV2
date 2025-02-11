@@ -4,31 +4,31 @@ from fastapi import APIRouter, Response, status
 from fastapi.responses import JSONResponse
 from fastapi.security.oauth2 import OAuth2PasswordBearer
 
-from app.core.exceptions import InvalidCredentialsError, EmailAlreadyExistsError
-from app.schemas.error import ErrorResponse
-from app.schemas.user import UserRegister, UserLogin
-from app.schemas.business import BusinessCompanyRegister, BusinessCompanyLogin
-from app.interactors.caching import CacheAccessTokenInteractor
+from app.core.exceptions import EmailAlreadyExistsError, InvalidCredentialsError
 from app.interactors.auth import (
-    SignUpUserInteractor,
+    SignInBusinessCompanyInteractor,
     SignInUserInteractor,
     SignUpBusinessCompanyInteractor,
-    SignInBusinessCompanyInteractor,
+    SignUpUserInteractor,
 )
+from app.interactors.caching import CacheAccessTokenInteractor
+from app.schemas.business import BusinessCompanyLogin, BusinessCompanyRegister
+from app.schemas.error import ErrorResponse
+from app.schemas.user import UserLogin, UserRegister
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 router = APIRouter(route_class=DishkaRoute)
 
 
-@router.post("/user/auth/sign-up")
+@router.post("/user/auth/sign-up", tags=["B2C"])
 async def user_sign_up(
     schema: UserRegister,
-    interactor: FromDishka[SignUpUserInteractor],
+    auth_interactor: FromDishka[SignUpUserInteractor],
     cache_interactor: FromDishka[CacheAccessTokenInteractor],
 ) -> Response:
     try:
-        token = await interactor(user_register=schema, cache_interactor=cache_interactor)
+        token = await auth_interactor(user_register=schema, cache_interactor=cache_interactor)
     except EmailAlreadyExistsError as exc:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
@@ -38,14 +38,14 @@ async def user_sign_up(
     return JSONResponse(status_code=status.HTTP_200_OK, content={"token": token})
 
 
-@router.post("/user/auth/sign-in")
+@router.post("/user/auth/sign-in", tags=["B2C"])
 async def user_sign_in(
     schema: UserLogin,
-    interactor: FromDishka[SignInUserInteractor],
+    auth_interactor: FromDishka[SignInUserInteractor],
     cache_interactor: FromDishka[CacheAccessTokenInteractor],
 ) -> Response:
     try:
-        token = await interactor(user_login=schema, cache_interactor=cache_interactor)
+        token = await auth_interactor(user_login=schema, cache_interactor=cache_interactor)
     except InvalidCredentialsError as exc:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -55,14 +55,14 @@ async def user_sign_in(
     return JSONResponse(status_code=status.HTTP_200_OK, content={"token": token})
 
 
-@router.post("/business/auth/sign-up")
+@router.post("/business/auth/sign-up", tags=["B2B"])
 async def business_sign_up(
     schema: BusinessCompanyRegister,
-    interactor: FromDishka[SignUpBusinessCompanyInteractor],
+    auth_interactor: FromDishka[SignUpBusinessCompanyInteractor],
     cache_interactor: FromDishka[CacheAccessTokenInteractor],
 ) -> Response:
     try:
-        token, company_id = await interactor(business_company_register=schema, cache_interactor=cache_interactor)
+        token, company_id = await auth_interactor(business_company_register=schema, cache_interactor=cache_interactor)
     except EmailAlreadyExistsError as exc:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
@@ -75,14 +75,14 @@ async def business_sign_up(
     )
 
 
-@router.post("/business/auth/sign-in")
+@router.post("/business/auth/sign-in", tags=["B2B"])
 async def business_sign_in(
     schema: BusinessCompanyLogin,
-    interactor: FromDishka[SignInBusinessCompanyInteractor],
+    auth_interactor: FromDishka[SignInBusinessCompanyInteractor],
     cache_interactor: FromDishka[CacheAccessTokenInteractor],
 ) -> Response:
     try:
-        token = await interactor(business_company_login=schema, cache_interactor=cache_interactor)
+        token = await auth_interactor(business_company_login=schema, cache_interactor=cache_interactor)
     except InvalidCredentialsError as exc:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,

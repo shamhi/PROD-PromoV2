@@ -1,36 +1,37 @@
+from collections.abc import Iterable
 from datetime import date
-from typing import Optional, Iterable, List, Tuple
+from typing import List, Optional, Tuple
 
-from sqlalchemy import or_, desc, func
+from sqlalchemy import desc, func, or_
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import (
+    EntityAccessDeniedError,
+    EntityNotFoundError,
+    InvalidRequestDataError,
+)
+from app.core.security import Security
 from app.database.postgres.models import (
     BusinessCompanyModel,
     PromoModel,
     PromoTargetModel,
     PromoUniqueValueModel,
-    UserPromoActivationModel,
     UserModel,
+    UserPromoActivationModel,
 )
-from app.core.security import get_password_hash
-from app.core.exceptions import (
-    EntityNotFoundError,
-    EntityAccessDeniedError,
-    InvalidRequestDataError,
-)
-from app.schemas.enums import PromoModeEnum, PromoSortByEnum
-from app.schemas.common import PromoId, CompanyId, Email, Country
 from app.schemas.business import BusinessCompanyRegister, PromoCreate, PromoPatch
+from app.schemas.common import CompanyId, Country, Email, PromoId
+from app.schemas.enums import PromoModeEnum, PromoSortByEnum
 
 
 class BusinessCompanyRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def create_new_company(self, company: BusinessCompanyRegister) -> BusinessCompanyModel:
-        hashed_password = get_password_hash(company.password)
+    async def create_new_company(self, company: BusinessCompanyRegister, security: Security) -> BusinessCompanyModel:
+        hashed_password = security.get_password_hash(company.password)
         new_company = BusinessCompanyModel(
             name=company.name,
             email=company.email,
@@ -76,9 +77,7 @@ class BusinessCompanyRepository:
         await self.db_session.flush()
 
         if promo.mode == PromoModeEnum.UNIQUE:
-            unique_values = [
-                PromoUniqueValueModel(promo_id=new_promo.id, unique_code=value) for value in promo.promo_unique
-            ]
+            unique_values = [PromoUniqueValueModel(promo_id=new_promo.id, unique_code=value) for value in promo.promo_unique]
             self.db_session.add_all(unique_values)
 
         await self.db_session.commit()
@@ -89,11 +88,11 @@ class BusinessCompanyRepository:
     async def get_promos_for_company(
         self,
         company_id: CompanyId,
-        sort_by: Optional[PromoSortByEnum] = None,
-        country: Optional[List[Country]] = None,
+        sort_by: PromoSortByEnum | None = None,
+        country: list[Country] | None = None,
         limit: int = 10,
         offset: int = 0,
-    ) -> Tuple[int, Iterable[PromoModel]]:
+    ) -> tuple[int, Iterable[PromoModel]]:
         query = (
             select(PromoModel)
             .options(
@@ -155,9 +154,7 @@ class BusinessCompanyRepository:
 
         return promo
 
-    async def patch_company_promo_by_id(
-        self, company_id: CompanyId, promo_id: PromoId, promo_patch: PromoPatch
-    ) -> PromoModel:
+    async def patch_company_promo_by_id(self, company_id: CompanyId, promo_id: PromoId, promo_patch: PromoPatch) -> PromoModel:
         query = (
             select(PromoModel)
             .options(
@@ -210,7 +207,7 @@ class BusinessCompanyRepository:
 
         return promo
 
-    async def get_promo_activations_by_country(self, promo_id: PromoId) -> List[Tuple[str, int]]:
+    async def get_promo_activations_by_country(self, promo_id: PromoId) -> list[tuple[str, int]]:
         query = (
             select(
                 func.lower(UserModel.country).label("country"),

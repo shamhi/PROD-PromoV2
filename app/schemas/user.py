@@ -1,25 +1,25 @@
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
 from pydantic import Field, conint
 
 from app.schemas.base import CustomBaseModel
 from app.schemas.common import (
-    Email,
-    Password,
-    UserFirstName,
-    UserSurname,
-    UserAvatarURL,
-    PromoId,
-    PromoDescription,
-    PromoImageURL,
-    PromoLikeCount,
-    PromoIsActive,
+    CommentId,
+    CommentText,
     CompanyId,
     CompanyName,
     Country,
-    CommentId,
-    CommentText,
+    Email,
+    Password,
+    PromoDescription,
+    PromoId,
+    PromoImageURL,
+    PromoIsActive,
+    PromoLikeCount,
+    UserAvatarURL,
+    UserFirstName,
+    UserSurname,
 )
 
 
@@ -46,7 +46,7 @@ class User(CustomBaseModel):
     name: UserFirstName
     surname: UserSurname
     email: Email
-    avatar_url: Optional[UserAvatarURL] = None
+    avatar_url: UserAvatarURL | None = None
     other: UserTargetSettings
 
 
@@ -58,7 +58,7 @@ class UserRegister(CustomBaseModel):
     name: UserFirstName
     surname: UserSurname
     email: Email
-    avatar_url: Optional[UserAvatarURL] = None
+    avatar_url: UserAvatarURL | None = None
     other: UserTargetSettings
     password: Password
 
@@ -77,10 +77,10 @@ class UserPatch(CustomBaseModel):
     Обновление данных пользователя
     """
 
-    name: Optional[UserFirstName] = None
-    surname: Optional[UserSurname] = None
-    avatar_url: Optional[UserAvatarURL] = None
-    password: Optional[Password] = None
+    name: UserFirstName | None = None
+    surname: UserSurname | None = None
+    avatar_url: UserAvatarURL | None = None
+    password: Password | None = None
 
 
 class PromoForUser(CustomBaseModel):
@@ -92,7 +92,7 @@ class PromoForUser(CustomBaseModel):
     company_id: CompanyId
     company_name: CompanyName
     description: PromoDescription
-    image_url: Optional[PromoImageURL] = None
+    image_url: PromoImageURL | None = None
     active: PromoIsActive
     is_activated_by_user: bool = Field(
         description="Активировал ли когда-то пользователь этот промокод",
@@ -118,7 +118,7 @@ class CommentAuthor(CustomBaseModel):
 
     name: UserFirstName
     surname: UserSurname
-    avatar_url: Optional[UserAvatarURL] = None
+    avatar_url: UserAvatarURL | None = None
 
 
 class Comment(CustomBaseModel):
@@ -142,4 +142,4 @@ class CommentTextRequest(CustomBaseModel):
 
 class AntifraudResponse(CustomBaseModel):
     ok: bool
-    cache_until: Optional[datetime] = None
+    cache_until: datetime | None = None

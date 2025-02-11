@@ -1,21 +1,21 @@
 import uuid
-from datetime import datetime, date
+from datetime import date, datetime
 
 from sqlalchemy import (
-    Column,
-    Integer,
-    String,
     UUID,
+    Boolean,
+    Column,
     Date,
     DateTime,
     Enum,
     ForeignKey,
-    Boolean,
+    Integer,
+    String,
     Table,
 )
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship
 
 from app.database.postgres.base import Base
 from app.schemas.enums import PromoModeEnum

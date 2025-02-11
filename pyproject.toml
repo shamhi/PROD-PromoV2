@@ -39,7 +39,6 @@ dependencies = [
     "pycparser==2.22",
     "pydantic==2.10.5",
     "pydantic-core==2.27.2",
-    "pydantic-settings==2.7.1",
     "pygments==2.19.1",
     "python-dotenv==1.0.1",
     "python-jose==3.3.0",
@@ -60,3 +59,63 @@ dependencies = [
     "watchfiles==1.0.4",
     "websockets==14.1",
 ]
+
+[tool.ruff]
+line-length = 128
+target-version = "py311"
+extend-exclude = [
+    ".git",
+    ".dockerignore",
+    ".gitignore",
+    ".env",
+    ".python-version",
+    "alembic.ini",
+    "Dockerfile",
+    "pyproject.toml",
+    "README.md",
+    "requirements.txt",
+    "ruff.toml",
+    "uv.lock",
+    "alembic",
+    "tests",
+]
+
+[tool.ruff.lint]
+extend-select = [
+    "E",
+    "F",
+    "UP",
+    "B",
+    "SIM",
+    "I",
+]
+ignore = [
+    "E501",
+    "SIM102",
+    "F821",
+    "F401",
+]
+
+[tool.black]
+line-length = 128
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | \.dockerignore
+  | \.gitignore
+  | \.env
+  | \.python-version
+  | alembic.ini
+  | Dockerfile
+  | pyproject.toml
+  | README.md
+  | requirements.txt
+  | ruff.toml
+  | uv.lock
+  | alembic
+  | tests
+)/
+'''

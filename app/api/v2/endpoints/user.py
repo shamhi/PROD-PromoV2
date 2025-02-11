@@ -2,38 +2,38 @@ from typing import Annotated, Optional
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
-from fastapi import APIRouter, Response, Query, Path, Depends, status
+from fastapi import APIRouter, Depends, Path, Query, Response, status
 from fastapi.responses import JSONResponse
 
 from app.api.v2.endpoints.auth import oauth2_scheme
-from app.interactors.auth import OAuth2PasswordBearerUserInteractor
-from app.interactors.antifraud import AntifraudInteractor
-from app.interactors.caching import CacheAccessTokenInteractor, CacheAntifraudInteractor
-from app.interactors.user import (
-    GetUserProfileInteractor,
-    PatchUserByIdInteractor,
-    GetUserPromoFeedInteractor,
-    GetUserPromoByIdInteractor,
-    AddLikeToPromoInteractor,
-    DeleteLikeToPromoInteractor,
-    AddCommentToPromoInteractor,
-    GetPromoCommentsInteractor,
-    GetPromoCommentByIdInteractor,
-    EditUserCommentByIdInteractor,
-    DeleteUserCommentByIdInteractor,
-    UserActivatePromoByIdInteractor,
-    GetPromoActivationsHistoryInteractor,
-)
 from app.core.exceptions import (
-    EntityUnauthorizedError,
     EntityAccessDeniedError,
     EntityNotFoundError,
+    EntityUnauthorizedError,
 )
+from app.interactors.antifraud import AntifraudInteractor
+from app.interactors.auth import OAuth2PasswordBearerUserInteractor
+from app.interactors.caching import CacheAccessTokenInteractor, CacheAntifraudInteractor
+from app.interactors.user import (
+    AddCommentToPromoInteractor,
+    AddLikeToPromoInteractor,
+    DeleteLikeToPromoInteractor,
+    DeleteUserCommentByIdInteractor,
+    EditUserCommentByIdInteractor,
+    GetPromoActivationsHistoryInteractor,
+    GetPromoCommentByIdInteractor,
+    GetPromoCommentsInteractor,
+    GetUserProfileInteractor,
+    GetUserPromoByIdInteractor,
+    GetUserPromoFeedInteractor,
+    PatchUserByIdInteractor,
+    UserActivatePromoByIdInteractor,
+)
+from app.schemas.common import CommentId, PromoId
 from app.schemas.error import ErrorResponse
-from app.schemas.common import PromoId, CommentId
-from app.schemas.user import UserPatch, CommentTextRequest
+from app.schemas.user import CommentTextRequest, UserPatch
 
-router = APIRouter(route_class=DishkaRoute)
+router = APIRouter(route_class=DishkaRoute, prefix="/user", tags=["B2C"])
 
 
 @router.get("/profile")
@@ -81,10 +81,10 @@ async def get_user_feed(
     user_interactor: FromDishka[GetUserPromoFeedInteractor],
     oauth2_interactor: FromDishka[OAuth2PasswordBearerUserInteractor],
     cache_interactor: FromDishka[CacheAccessTokenInteractor],
-    limit: Optional[int] = Query(default=10, ge=0, le=100, description="Количество записей на странице"),
-    offset: Optional[int] = Query(default=0, ge=0, description="Смещение для пагинации"),
-    category: Optional[str] = Query(default=None, description="Будут возвращены промокоды с указанной категорией."),
-    active: Optional[bool] = Query(
+    limit: int | None = Query(default=10, ge=0, le=100, description="Количество записей на странице"),
+    offset: int | None = Query(default=0, ge=0, description="Смещение для пагинации"),
+    category: str | None = Query(default=None, description="Будут возвращены промокоды с указанной категорией."),
+    active: bool | None = Query(
         default=None,
         description="Если поле указано, будут возвращены промокоды с соответствующим значением поля active."
         "Если параметр отсутствует, фильтрация по статусу активности не применяется.",
@@ -203,8 +203,8 @@ async def get_promo_comments(
     user_interactor: FromDishka[GetPromoCommentsInteractor],
     oauth2_interactor: FromDishka[OAuth2PasswordBearerUserInteractor],
     cache_interactor: FromDishka[CacheAccessTokenInteractor],
-    limit: Optional[int] = Query(default=10, ge=0, le=100, description="Количество записей на странице"),
-    offset: Optional[int] = Query(default=0, ge=0, description="Смещение для пагинации"),
+    limit: int | None = Query(default=10, ge=0, le=100, description="Количество записей на странице"),
+    offset: int | None = Query(default=0, ge=0, description="Смещение для пагинации"),
     id: PromoId = Path(
         description="Уникальный ID промокода, выдаётся сервером",
         example="d8f9a687-4ff9-4976-a05c-f1bf1e5e2eec",
@@ -389,8 +389,8 @@ async def get_user_activations_history(
     user_interactor: FromDishka[GetPromoActivationsHistoryInteractor],
     oauth2_interactor: FromDishka[OAuth2PasswordBearerUserInteractor],
     cache_interactor: FromDishka[CacheAccessTokenInteractor],
-    limit: Optional[int] = Query(default=10, ge=0, le=100, description="Количество записей на странице"),
-    offset: Optional[int] = Query(default=0, ge=0, description="Смещение для пагинации"),
+    limit: int | None = Query(default=10, ge=0, le=100, description="Количество записей на странице"),
+    offset: int | None = Query(default=0, ge=0, description="Смещение для пагинации"),
 ) -> Response:
     try:
         user_id = await oauth2_interactor(token, cache_interactor)

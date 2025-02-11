@@ -1,9 +1,9 @@
-from typing import Optional, List
+from typing import List, Optional
 
 from app.database.repositories.business import BusinessCompanyRepository
-from app.schemas.enums import PromoSortByEnum
-from app.schemas.common import PromoId, CompanyId
 from app.schemas.business import PromoCreate, PromoPatch, PromoReadOnly, PromoStat
+from app.schemas.common import CompanyId, PromoId
+from app.schemas.enums import PromoSortByEnum
 from app.utils.serializer import serialize_promo_read_only, serialize_promo_stat
 
 
@@ -24,11 +24,11 @@ class GetPromosListInteractor:
     async def __call__(
         self,
         company_id: CompanyId,
-        sort_by: Optional[PromoSortByEnum] = None,
-        country: Optional[List[str]] = None,
-        limit: Optional[int] = 10,
-        offset: Optional[int] = 0,
-    ) -> List[PromoReadOnly]:
+        sort_by: PromoSortByEnum | None = None,
+        country: list[str] | None = None,
+        limit: int | None = 10,
+        offset: int | None = 0,
+    ) -> list[PromoReadOnly]:
         (
             total_count,
             promos,

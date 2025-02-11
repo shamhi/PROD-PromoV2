@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, model_validator, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from app.core.exceptions import InvalidRequestDataError
 from app.utils.validator import is_iso3166_country, is_valid_email

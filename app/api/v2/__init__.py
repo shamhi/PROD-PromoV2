@@ -1,10 +1,15 @@
 from fastapi import APIRouter
 
-from app.api.v2.endpoints import ping, user, auth, business
+from app.api.v2.endpoints import auth, business, ping, user
 
-api_router = APIRouter()
+root_router = APIRouter()
 
-api_router.include_router(ping.router, prefix="")
-api_router.include_router(auth.router, prefix="")
-api_router.include_router(user.router, prefix="/user")
-api_router.include_router(business.router, prefix="/business")
+sub_routers = (
+    ping.router,
+    auth.router,
+    business.router,
+    user.router,
+)
+
+for router in sub_routers:
+    root_router.include_router(router)

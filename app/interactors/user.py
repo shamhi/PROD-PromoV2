@@ -1,15 +1,16 @@
 from typing import List, Tuple
 
-from app.database.repositories.user import UserRepository
 from app.core.exceptions import EntityAccessDeniedError
+from app.core.security import Security
+from app.database.repositories.user import UserRepository
 from app.interactors.antifraud import AntifraudInteractor
 from app.interactors.caching import CacheAntifraudInteractor
-from app.schemas.common import UserId, PromoId, CommentId, CommentText
-from app.schemas.user import User, UserPatch, PromoForUser, Comment
+from app.schemas.common import CommentId, CommentText, PromoId, UserId
+from app.schemas.user import Comment, PromoForUser, User, UserPatch
 from app.utils.serializer import (
-    serialize_user,
-    serialize_promo_for_user,
     serialize_comment,
+    serialize_promo_for_user,
+    serialize_user,
 )
 
 
@@ -26,11 +27,12 @@ class GetUserProfileInteractor:
 
 
 class PatchUserByIdInteractor:
-    def __init__(self, user_repository: UserRepository):
+    def __init__(self, user_repository: UserRepository, security: Security):
         self.user_repository = user_repository
+        self.security = security
 
     async def __call__(self, user_id: str, user_patch: UserPatch) -> User:
-        user_orm = await self.user_repository.patch_user_by_id(user_id=user_id, user_patch=user_patch)
+        user_orm = await self.user_repository.patch_user_by_id(user_id=user_id, user_patch=user_patch, security=self.security)
 
         user = serialize_user(user_orm)
 
@@ -43,7 +45,7 @@ class GetUserPromoFeedInteractor:
 
     async def __call__(
         self, user_id: UserId, category: str, active: bool, limit: int, offset: int
-    ) -> Tuple[int, List[PromoForUser]]:
+    ) -> tuple[int, list[PromoForUser]]:
         total_count, promos = await self.user_repository.get_promos_for_user(
             user_id=user_id,
             category=category,
@@ -103,10 +105,8 @@ class GetPromoCommentsInteractor:
     def __init__(self, user_repository: UserRepository):
         self.user_repository = user_repository
 
-    async def __call__(self, promo_id: PromoId, limit: int, offset: int) -> Tuple[int, List[Comment]]:
-        total_count, comments_orm = await self.user_repository.get_promo_comments(
-            promo_id=promo_id, limit=limit, offset=offset
-        )
+    async def __call__(self, promo_id: PromoId, limit: int, offset: int) -> tuple[int, list[Comment]]:
+        total_count, comments_orm = await self.user_repository.get_promo_comments(promo_id=promo_id, limit=limit, offset=offset)
 
         comments = [serialize_comment(comment_orm) for comment_orm in comments_orm]
 
@@ -196,7 +196,7 @@ class GetPromoActivationsHistoryInteractor:
     def __init__(self, user_repository: UserRepository):
         self.user_repository = user_repository
 
-    async def __call__(self, user_id: UserId, limit: int, offset: int) -> Tuple[int, List[PromoForUser]]:
+    async def __call__(self, user_id: UserId, limit: int, offset: int) -> tuple[int, list[PromoForUser]]:
         (
             total_count,
             promos,

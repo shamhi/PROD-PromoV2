@@ -1,24 +1,24 @@
 import json
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 
-from app.database.postgres.models import PromoModel, UserModel, CommentModel
-from app.utils.time import format_rfc3339_date
-from app.schemas.enums import PromoModeEnum
-from app.schemas.common import UserId, Country
+from app.database.postgres.models import CommentModel, PromoModel, UserModel
 from app.schemas.business import (
-    Target,
-    PromoStat,
     PromoReadOnly,
+    PromoStat,
     PromoStatCountriesActivations,
+    Target,
 )
+from app.schemas.common import Country, UserId
+from app.schemas.enums import PromoModeEnum
 from app.schemas.user import (
-    User,
-    UserTargetSettings,
-    PromoForUser,
+    AntifraudResponse,
     Comment,
     CommentAuthor,
-    AntifraudResponse,
+    PromoForUser,
+    User,
+    UserTargetSettings,
 )
+from app.utils.time import format_rfc3339_date
 
 
 def serialize_promo_read_only(promo: PromoModel) -> PromoReadOnly:
@@ -59,7 +59,7 @@ def serialize_promo_read_only(promo: PromoModel) -> PromoReadOnly:
     return json.loads(promo_read_only.json(exclude_none=True))
 
 
-def serialize_promo_stat(promo_activations: List[Tuple[str, int]]) -> PromoStat:
+def serialize_promo_stat(promo_activations: list[tuple[str, int]]) -> PromoStat:
     activations_count = sum(activation_count for _, activation_count in promo_activations)
 
     countries = [
@@ -125,7 +125,7 @@ def serialize_antifraud_response(antifraud_response: AntifraudResponse):
     return json.loads(antifraud_response.json(exclude_none=True))
 
 
-def serialize_countries_list(country: str) -> Optional[List[Country]]:
+def serialize_countries_list(country: str) -> list[Country] | None:
     if country:
         countries = [Country(cnt.strip()) for cnt in country.split(",")]
         return countries

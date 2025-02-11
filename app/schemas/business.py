@@ -1,26 +1,26 @@
-from typing import Optional, List
+from typing import List, Optional
 
-from pydantic import Field, constr, conint
+from pydantic import Field, conint, constr
 
 from app.schemas.base import CustomBaseModel
 from app.schemas.common import (
-    Email,
-    Password,
-    PromoDescription,
-    PromoImageURL,
-    PromoMaxCount,
-    PromoActiveFrom,
-    PromoActiveUntil,
-    PromoMode,
-    PromoCommon,
-    PromoUnique,
-    PromoId,
     CompanyId,
     CompanyName,
-    PromoLikeCount,
-    PromoUsedCount,
-    PromoIsActive,
     Country,
+    Email,
+    Password,
+    PromoActiveFrom,
+    PromoActiveUntil,
+    PromoCommon,
+    PromoDescription,
+    PromoId,
+    PromoImageURL,
+    PromoIsActive,
+    PromoLikeCount,
+    PromoMaxCount,
+    PromoMode,
+    PromoUnique,
+    PromoUsedCount,
 )
 
 
@@ -48,7 +48,7 @@ class Target(CustomBaseModel):
     Целевая аудитория
     """
 
-    age_from: Optional[conint(ge=0, le=100, strict=True)] = Field(
+    age_from: conint(ge=0, le=100, strict=True) | None = Field(
         default=None,
         ge=0,
         le=100,
@@ -56,7 +56,7 @@ class Target(CustomBaseModel):
         description="Минимальный возраст целевой аудитории (включительно). Не должен превышать age_until.",
         examples=[14],
     )
-    age_until: Optional[conint(ge=0, le=100, strict=True)] = Field(
+    age_until: conint(ge=0, le=100, strict=True) | None = Field(
         default=None,
         ge=0,
         le=100,
@@ -64,8 +64,8 @@ class Target(CustomBaseModel):
         description="Максимальный возраст целевой аудитории (включительно).",
         examples=[20],
     )
-    country: Optional[Country] = None
-    categories: Optional[List[constr(min_length=2, max_length=20)]] = Field(
+    country: Country | None = None
+    categories: list[constr(min_length=2, max_length=20)] | None = Field(
         default=None,
         max_length=20,
         description="Категории для таргетинга.",
@@ -79,14 +79,14 @@ class PromoCreate(CustomBaseModel):
     """
 
     description: PromoDescription
-    image_url: Optional[PromoImageURL] = None
+    image_url: PromoImageURL | None = None
     target: Target
     max_count: PromoMaxCount
-    active_from: Optional[PromoActiveFrom] = None
-    active_until: Optional[PromoActiveUntil] = None
+    active_from: PromoActiveFrom | None = None
+    active_until: PromoActiveUntil | None = None
     mode: PromoMode
-    promo_common: Optional[PromoCommon] = None
-    promo_unique: Optional[PromoUnique] = None
+    promo_common: PromoCommon | None = None
+    promo_unique: PromoUnique | None = None
 
 
 class PromoPatch(CustomBaseModel):
@@ -94,12 +94,12 @@ class PromoPatch(CustomBaseModel):
     Поля для редактирования промокода
     """
 
-    description: Optional[PromoDescription] = None
-    image_url: Optional[PromoImageURL] = None
-    target: Optional[Target] = None
-    max_count: Optional[PromoMaxCount] = None
-    active_from: Optional[PromoActiveFrom] = None
-    active_until: Optional[PromoActiveUntil] = None
+    description: PromoDescription | None = None
+    image_url: PromoImageURL | None = None
+    target: Target | None = None
+    max_count: PromoMaxCount | None = None
+    active_from: PromoActiveFrom | None = None
+    active_until: PromoActiveUntil | None = None
 
 
 class PromoReadOnly(CustomBaseModel):
@@ -108,14 +108,14 @@ class PromoReadOnly(CustomBaseModel):
     """
 
     description: PromoDescription
-    image_url: Optional[PromoImageURL] = None
+    image_url: PromoImageURL | None = None
     target: Target
     max_count: PromoMaxCount
-    active_from: Optional[PromoActiveFrom] = None
-    active_until: Optional[PromoActiveUntil] = None
+    active_from: PromoActiveFrom | None = None
+    active_until: PromoActiveUntil | None = None
     mode: PromoMode
-    promo_common: Optional[PromoCommon] = None
-    promo_unique: Optional[PromoUnique] = None
+    promo_common: PromoCommon | None = None
+    promo_unique: PromoUnique | None = None
     promo_id: PromoId
     company_id: CompanyId
     company_name: CompanyName
@@ -125,7 +125,7 @@ class PromoReadOnly(CustomBaseModel):
 
 
 class PromoStatCountriesActivations(CustomBaseModel):
-    country: Optional[Country]
+    country: Country | None
     activations_count: conint(ge=1, strict=True) = Field(
         ge=1,
         strict=True,
@@ -145,4 +145,4 @@ class PromoStat(CustomBaseModel):
         description="Общее количество активаций",
         examples=[50],
     )
-    countries: Optional[List[PromoStatCountriesActivations]] = None
+    countries: list[PromoStatCountriesActivations] | None = None

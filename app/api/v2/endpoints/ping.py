@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
-router = APIRouter()
+router = APIRouter(tags=["default"])
 
 
 @router.get("/ping")

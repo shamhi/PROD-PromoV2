@@ -1,11 +1,10 @@
 import re
 from datetime import date
-from typing import Annotated, Union, List
+from typing import Annotated, List, Union
 
-from pydantic import Field, constr, conint, UUID4, EmailStr, HttpUrl
+from pydantic import UUID4, EmailStr, Field, HttpUrl, conint, constr
 
 from app.schemas.enums import PromoModeEnum
-
 
 Email = Annotated[
     EmailStr,
@@ -150,7 +149,7 @@ PromoCommon = Annotated[
 ]
 
 PromoUnique = Annotated[
-    List[constr(min_length=3, max_length=30)],
+    list[constr(min_length=3, max_length=30)],
     Field(
         min_length=1,
         max_length=5000,
